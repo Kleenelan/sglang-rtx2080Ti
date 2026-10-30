@@ -1,0 +1,101 @@
+# sgl-kernel 构建所需第三方 Git 仓库手动下载清单
+#
+# 说明：
+# 1. 以下仓库均由 sgl-kernel/CMakeLists.txt 通过 FetchContent 自动拉取。
+# 2. GIT_SHALLOW 均为 OFF，需要能 checkout 到指定 commit/tag 的完整历史（或至少该提交可达）。
+# 3. 手动下载后，可在构建时用 -DFETCHCONTENT_SOURCE_DIR_<NAME>=<本地路径> 指向，跳过网络克隆。
+#    例如：
+#      cd /root/tmp01/sglang/sgl-kernel
+#      CMAKE_ARGS="-DFETCHCONTENT_SOURCE_DIR_REPO-TRITON=/path/to/triton \
+#                  -DFETCHCONTENT_SOURCE_DIR_REPO-CUTLASS=/path/to/cutlass \
+#                  ..." \
+#        pip install -e . --no-build-isolation
+#
+# 当前已失败/需要手动准备的仓库：
+# - repo-triton: 克隆时 RPC failed (curl 92 HTTP/2 stream cancel)
+# - repo-deepgemm: 原 CMakeLists.txt 中 54f99a8... 在 sgl-project/DeepGEMM 不存在，已改为当前 HEAD 348a285...
+#   建议也手动准备一份，避免再次 force-push 导致哈希失效。
+
+# -----------------------------------------------------------------------------
+# 1) repo-cutlass
+#    CMake 变量名：FETCHCONTENT_SOURCE_DIR_REPO-CUTLASS
+# -----------------------------------------------------------------------------
+git clone --no-checkout https://github.com/NVIDIA/cutlass.git repo-cutlass
+cd repo-cutlass
+git checkout 57e3cfb47a2d9e0d46eb6335c3dc411498efa198
+
+# -----------------------------------------------------------------------------
+# 2) repo-deepgemm（已修正后的可用 commit）
+#    CMake 变量名：FETCHCONTENT_SOURCE_DIR_REPO-DEEPGEMM
+# -----------------------------------------------------------------------------
+git clone --no-checkout https://github.com/sgl-project/DeepGEMM.git repo-deepgemm
+cd repo-deepgemm
+git checkout 348a285dbb5a19be34aaedfe36fd5951fc3f2639
+
+# -----------------------------------------------------------------------------
+# 3) repo-fmt
+#    CMake 变量名：FETCHCONTENT_SOURCE_DIR_REPO-FMT
+# -----------------------------------------------------------------------------
+git clone --no-checkout https://github.com/fmtlib/fmt.git repo-fmt
+cd repo-fmt
+git checkout 553ec11ec06fbe0beebfbb45f9dc3c9eabd83d28
+
+# -----------------------------------------------------------------------------
+# 4) repo-triton（本次构建网络失败）
+#    CMake 变量名：FETCHCONTENT_SOURCE_DIR_REPO-TRITON
+# -----------------------------------------------------------------------------
+git clone --no-checkout https://github.com/triton-lang/triton.git repo-triton
+cd repo-triton
+git checkout v3.5.1
+
+# -----------------------------------------------------------------------------
+# 5) repo-flashinfer
+#    CMake 变量名：FETCHCONTENT_SOURCE_DIR_REPO-FLASHINFER
+# -----------------------------------------------------------------------------
+git clone --no-checkout https://github.com/flashinfer-ai/flashinfer.git repo-flashinfer
+cd repo-flashinfer
+git checkout bc29697ba20b7e6bdb728ded98f04788e16ee021
+
+# -----------------------------------------------------------------------------
+# 6) repo-flash-attention（实际仓库为 sgl-project/sgl-attn）
+#    CMake 变量名：FETCHCONTENT_SOURCE_DIR_REPO-FLASH-ATTENTION
+# -----------------------------------------------------------------------------
+git clone --no-checkout https://github.com/sgl-project/sgl-attn.git repo-flash-attention
+cd repo-flash-attention
+git checkout f20a52329482ddca4a627b2f028f88c2959ee299
+
+# -----------------------------------------------------------------------------
+# 7) repo-mscclpp
+#    CMake 变量名：FETCHCONTENT_SOURCE_DIR_REPO-MSCCLPP
+# -----------------------------------------------------------------------------
+git clone --no-checkout https://github.com/microsoft/mscclpp.git repo-mscclpp
+cd repo-mscclpp
+git checkout 51eca89d20f0cfb3764ccd764338d7b22cd486a6
+
+# -----------------------------------------------------------------------------
+# 8) repo-fast-hadamard-transform
+#    CMake 变量名：FETCHCONTENT_SOURCE_DIR_REPO-FAST-HADAMARD-TRANSFORM
+# -----------------------------------------------------------------------------
+git clone --no-checkout https://github.com/sgl-project/fast-hadamard-transform.git repo-fast-hadamard-transform
+cd repo-fast-hadamard-transform
+git checkout 48f3c13764dc2ec662ade842a4696a90a137f1bc
+
+# -----------------------------------------------------------------------------
+# 使用本地副本构建示例（假设全部放在 /root/tmp01/sglang/3rdparty_repos 下）
+# -----------------------------------------------------------------------------
+# cd /root/tmp01/sglang/sgl-kernel
+# CMAKE_ARGS="
+#   -DFETCHCONTENT_SOURCE_DIR_REPO-CUTLASS=/root/tmp01/sglang/3rdparty_repos/repo-cutlass
+#   -DFETCHCONTENT_SOURCE_DIR_REPO-DEEPGEMM=/root/tmp01/sglang/3rdparty_repos/repo-deepgemm
+#   -DFETCHCONTENT_SOURCE_DIR_REPO-FMT=/root/tmp01/sglang/3rdparty_repos/repo-fmt
+#   -DFETCHCONTENT_SOURCE_DIR_REPO-TRITON=/root/tmp01/sglang/3rdparty_repos/repo-triton
+#   -DFETCHCONTENT_SOURCE_DIR_REPO-FLASHINFER=/root/tmp01/sglang/3rdparty_repos/repo-flashinfer
+#   -DFETCHCONTENT_SOURCE_DIR_REPO-FLASH-ATTENTION=/root/tmp01/sglang/3rdparty_repos/repo-flash-attention
+#   -DFETCHCONTENT_SOURCE_DIR_REPO-MSCCLPP=/root/tmp01/sglang/3rdparty_repos/repo-mscclpp
+#   -DFETCHCONTENT_SOURCE_DIR_REPO-FAST-HADAMARD-TRANSFORM=/root/tmp01/sglang/3rdparty_repos/repo-fast-hadamard-transform
+# " \
+# CUDA_HOME=/usr/local/cuda \
+# CMAKE_POLICY_VERSION_MINIMUM=3.5 \
+# CMAKE_BUILD_PARALLEL_LEVEL=64 \
+# MAX_JOBS=64 \
+# pip install -e . --no-build-isolation -vvv
